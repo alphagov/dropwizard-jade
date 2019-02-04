@@ -57,7 +57,7 @@ public class JadeViewRenderer implements ViewRenderer {
     }
 
     @Override
-    public String getSuffix() {
-        return ".jade";
+    public String getConfigurationKey() {
+        return "jade";
     }
 }
