@@ -1,9 +1,11 @@
 plugins {
-  id "com.jfrog.bintray" version "1.8.4"
+  id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
 }
 
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'io.github.gradle-nexus.publish-plugin'
 
 repositories {
   if (System.getenv('VERIFY_USE_PUBLIC_BINARIES') == 'true') {
@@ -34,31 +36,67 @@ task sourceJar(type: Jar) {
   from sourceSets.main.allJava
 }
 
-publishing {
-  publications {
-    mavenJava(MavenPublication) {
-      from components.java
-      artifact sourceJar
-      groupId = "uk.gov.ida"
-      artifactId = 'dropwizard-jade'
-      version = "$dependencyVersions.dropwizard-${System.env.BUILD_NUMBER ?: 'SNAPSHOT'}"
+java {
+  withJavadocJar()
+  withSourcesJar()
+}
+
+group 'uk.gov.ida'
+version "$dependencyVersions.dropwizard-${System.env.BUILD_NUMBER ?: 'SNAPSHOT'}"
+
+nexusPublishing {
+  useStaging = true
+  repositories {
+    sonatype {
+      // because we registered in Sonatype after 24 Feb 2021, we provide these URIs
+      // see: https://github.com/gradle-nexus/publish-plugin/blob/master/README.md
+      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+      username = System.getenv("SONATYPE_USERNAME")
+      password = System.getenv("SONATYPE_PASSWORD")
     }
   }
 }
 
-bintray {
-  user = System.getenv('BINTRAY_USER')
-  key = System.getenv('BINTRAY_API_KEY')
-  publications = ['mavenJava']
-  publish = true
-  pkg {
-    repo = 'maven-test'
-    name = 'dropwizard-jade'
-    userOrg = 'alphagov'
-    licenses = ['MIT']
-    vcsUrl = 'https://github.com/alphagov/dropwizard-jade.git'
-    version {
-      name = "$dependencyVersions.dropwizard-${System.env.BUILD_NUMBER ?: 'SNAPSHOT'}"
+signing {
+  useInMemoryPgpKeys(
+          System.getenv("MAVEN_CENTRAL_SIGNING_KEY"),
+          System.getenv("MAVEN_CENTRAL_SIGNING_KEY_PASSWORD")
+  )
+  sign publishing.publications
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+      pom {
+        name = 'Dropwizard Jade'
+        packaging = 'jar'
+        description = 'Dropwizard extension to use the Jade templating engine in Views'
+        url = 'https://github.com/alphagov/dropwizard-jade'
+        artifactId = 'dropwizard-jade'
+
+        scm {
+          url = 'https://github.com/alphagov/dropwizard-jade'
+          connection = 'scm:git:git://github.com/alphagov/dropwizard-jade.git'
+          developerConnection = 'scm:git:ssh://git@github.com:alphagov/dropwizard-jade.git'
+        }
+
+        licenses {
+          license {
+            name = 'MIT Licence'
+            url = 'https://github.com/alphagov/dropwizard-logstash/blob/master/LICENCE'
+            distribution = 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            name = 'GDS Developers'
+          }
+        }
+      } // pom
     }
   }
 }
