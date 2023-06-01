@@ -1,6 +1,8 @@
 # dropwizard-jade
 
-[![Build Status](https://travis-ci.org/alphagov/dropwizard-jade.svg?branch=master)](https://travis-ci.org/alphagov/dropwizard-jade)
+>**GOV.UK Verify has closed**
+>
+>This repository is out of date and has been archived
 
 Dropwizard extension to use the [Jade templating engine](http://jade-lang.com/) in Views.
 
